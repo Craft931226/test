@@ -82,12 +82,12 @@ def floyd_warshall(nodes, weight_matrix):
     dist = {u: {v: weight_matrix.get(u, {}).get(v, math.inf) for v in nodes} for u in nodes}
     next_hop = {u: {v: None for v in nodes} for u in nodes}
 
-    for u in nodes:
-        dist[u][u] = 0
-        next_hop[u][u] = u
-        for v in nodes:
-            if weight_matrix.get(u, {}).get(v, math.inf) != math.inf:
-                next_hop[u][v] = v
+    # for u in nodes:
+    #     dist[u][u] = 0
+    #     next_hop[u][u] = u
+    #     for v in nodes:
+    #         if weight_matrix.get(u, {}).get(v, math.inf) != math.inf:
+    #             next_hop[u][v] = v
 
     # 三重迴圈鬆弛
     for k in nodes:
@@ -95,40 +95,88 @@ def floyd_warshall(nodes, weight_matrix):
             for j in nodes:
                 if dist[i][k] + dist[k][j] < dist[i][j]:
                     dist[i][j] = dist[i][k] + dist[k][j]
-                    next_hop[i][j] = next_hop[i][k]
+                    # next_hop[i][j] = next_hop[i][k]
 
     # 檢測負權重迴路
     for u in nodes:
         if dist[u][u] < 0:
             raise ValueError("Graph contains a negative-weight cycle")
 
-    return dist, next_hop
+    return dist
 
+###############################################################################
+# 1. Prim’s Greedy MST — adjacency-list version, O(E log V) with heapq
+###############################################################################
+import heapq
 
-# 範例用法
-if __name__ == "__main__":
-    # 以 adjacency list 表示的範例圖
-    graph = {
-        'A': [('B', 4), ('C', 2)],
-        'B': [('C', 5), ('D', 10)],
-        'C': [('E', 3)],
-        'D': [('F', 11)],
-        'E': [('D', 4)],
-        'F': []
-    }
+def prim_mst(adj, start=0):
+    """
+    adj: list[list[tuple[int,int]]]  # adj[u] = [(v, weight), ...]
+    start: starting vertex index
+    Returns: (mst_edges, total_weight)
+    """
+    n            = len(adj)
+    in_mst       = [False] * n
+    key          = [float('inf')] * n   # key[v] = best edge weight crossing A | V−A
+    parent       = [-1] * n
+    key[start]   = 0
+    pq           = [(0, start)]         # (weight, vertex)
 
-    print("Dijkstra:", dijkstra(graph, 'A'))
-    print("Bellman-Ford:", bellman_ford(graph, 'A'))
+    while pq:                            # while Q ≠ ∅   (slide 25)
+        w, u = heapq.heappop(pq)         # u ← EXTRACT-MIN(Q)
+        if in_mst[u]:
+            continue                     # ignore obsolete entries (lazy-delete)
+        in_mst[u] = True
 
-    # 以 weight_matrix 表示的範例圖
-    nodes = ['A', 'B', 'C', 'D', 'E', 'F']
-    weight_matrix = {
-        'A': {'B': 4, 'C': 2},
-        'B': {'C': 5, 'D': 10},
-        'C': {'E': 3},
-        'E': {'D': 4},
-        'D': {'F': 11},
-    }
-    dist_matrix, next_hop = floyd_warshall(nodes, weight_matrix)
-    print("Floyd-Warshall dist:", dist_matrix)
-    print("Floyd-Warshall next:", next_hop)
+        for v, wt in adj[u]:             # for each (u,v) ∈ Adj[u]
+            if not in_mst[v] and wt < key[v]:
+                key[v]    = wt           # DECREASE-KEY
+                parent[v] = u
+                heapq.heappush(pq, (wt, v))
+                
+    mst_edges = []
+    total_cost =0
+    for v in range(n):
+        if parent[v] != -1:
+            mst_edges.append((parent[v], v, key[v]))
+            total_cost += key[v]
+    return mst_edges, total_cost
+
+graph = {
+    'A': [('B', 4), ('C', 2)],
+    'B': [('C', 5), ('D', 10)],
+    'C': [('E', 3)], # 加, ('A', -3)有負權重
+    'D': [('F', 11)],
+    'E': [('D', 4)],
+    'F': []
+}
+
+# print("Dijkstra:", dijkstra(graph, 'A'))
+print("Bellman-Ford:", bellman_ford(graph, 'A'))
+
+# 以 weight_matrix 表示的範例圖
+nodes = ['A', 'B', 'C', 'D', 'E', 'F']
+weight_matrix = {
+    'A': {'B': 4, 'C': 2},
+    'B': {'C': 5, 'D': 10},
+    'C': {'E': 3},
+    'E': {'D': 4},
+    'D': {'F': 11},
+}
+dist_matrix= floyd_warshall(nodes, weight_matrix)
+print("Floyd-Warshall dist:", dist_matrix)
+# print("Floyd-Warshall next:", next_hop)
+
+adj = [
+[(1, 2), (3, 6)],        # 0 連到 1(權重2), 3(權重6)
+[(0, 2), (2, 3), (3, 8), (4, 5)],  # 1 連到 0,2,3,4
+[(1, 3), (4, 7)],        # 2 連到 1(3), 4(7)
+[(0, 6), (1, 8), (4, 9)],# 3 連到 0,1,4
+[(1, 5), (2, 7), (3, 9)] # 4 連到 1,2,3
+]
+
+# 從頂點 0 開始找 MST：
+mst_edges, total_weight = prim_mst(adj, start=0)
+
+print("MST edges:", mst_edges)
+print("Total weight:", total_weight)
