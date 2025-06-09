@@ -2,31 +2,28 @@ import math
 from heapq import heappush, heappop
 
 
-def dijkstra(graph, source):
+def dijkstra(graph, start):
     """
     graph: dict {u: [(v, w), ...]}
     """
-    dist = {u: math.inf for u in graph}
+    dist ={u: math.inf for u in graph}
     prev = {u: None for u in graph}
-    dist[source] = 0
+    dist[start] = 0
     visited = set()
-    heap = [(0, source)]
-
+    heap = [(0, start)]
     while heap:
-        d_u, u = heappop(heap)
+        du, u = heapq.heappop(heap)
         if u in visited:
             continue
         visited.add(u)
         for v, w in graph[u]:
-            if w < 0:
-                raise ValueError("Dijkstra 演算法不支援負權重")
-            alt = d_u + w
-            if alt < dist[v]:
-                dist[v] = alt
+            if dist[v] > dist[u] + w:
+                dist[v] = dist[u] + w
                 prev[v] = u
-                heappush(heap, (alt, v))
-
+                heapq.heappush(heap, (dist[v], v))
     return dist, prev
+
+
 
 
 def bellman_ford(graph, source):
