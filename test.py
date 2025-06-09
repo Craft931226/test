@@ -129,6 +129,18 @@ def prim_mst(adj, start=0):
             total_cost += key[v]
     return mst_edges, total_cost
 
+def lcs(text1, text2):
+    m = len(text1)
+    n = len(text2)
+    c = [[None]*(m+1) for _ in range(n+1)]
+    for i in range(n):
+        for j in range(m):
+            if text1[j] == text2[i]:
+                c[i+1][j+1] = c[i][j] +1
+            else:
+                c[i+1][j+1] = max(c[i][j+1],c[i+1][j])
+    print(c[n][m])
+
 graph = {
     'A': [('B', 4), ('C', 2)],
     'B': [('C', 5), ('D', 10)],
@@ -138,8 +150,6 @@ graph = {
     'F': []
 }
 
-# print("Dijkstra:", dijkstra(graph, 'A'))
-print("Bellman-Ford:", bellman_ford(graph, 'A'))
 
 # 以 weight_matrix 表示的範例圖
 nodes = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -150,9 +160,6 @@ weight_matrix = {
     'E': {'D': 4},
     'D': {'F': 11},
 }
-dist_matrix= floyd_warshall(nodes, weight_matrix)
-print("Floyd-Warshall dist:", dist_matrix)
-# print("Floyd-Warshall next:", next_hop)
 
 adj = [
 [(1, 2), (3, 6)],        # 0 連到 1(權重2), 3(權重6)
@@ -161,9 +168,3 @@ adj = [
 [(0, 6), (1, 8), (4, 9)],# 3 連到 0,1,4
 [(1, 5), (2, 7), (3, 9)] # 4 連到 1,2,3
 ]
-
-# 從頂點 0 開始找 MST：
-mst_edges, total_weight = prim_mst(adj, start=0)
-
-print("MST edges:", mst_edges)
-print("Total weight:", total_weight)
